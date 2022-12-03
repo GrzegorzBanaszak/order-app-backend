@@ -8,7 +8,7 @@ import { OrderModule } from './order/order.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AutomapperModule } from '@automapper/nestjs';
 import { classes } from '@automapper/classes';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as autoPopulate from 'mongoose-autopopulate';
 import { EmployerModule } from './employer/employer.module';
 
@@ -21,11 +21,16 @@ import { EmployerModule } from './employer/employer.module';
         CustomerModule,
         OrderModule,
         EmployerModule,
-        MongooseModule.forRoot('mongodb://localhost:27017/orders', {
-            connectionFactory: (connection) => {
-                connection.plugin(autoPopulate);
-                return connection;
-            },
+        MongooseModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: async (configService: ConfigService) => ({
+                uri: configService.get<string>('MONGODB_URI'),
+                connectionFactory: (connection: any) => {
+                    connection.plugin(autoPopulate);
+                    return connection;
+                },
+            }),
+            inject: [ConfigService],
         }),
         AutomapperModule.forRoot({
             strategyInitializer: classes(),
